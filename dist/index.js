@@ -1,10 +1,10 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.PCMPlayer = factory());
-}(this, (function () { 'use strict';
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.PCMPlayer = factory());
+})(this, (function () { 'use strict';
 
-  class PCMPlayer {
+  class PCMTransform {
     constructor(option) {
       this.init(option);
     }
@@ -59,15 +59,16 @@
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       // 控制音量的 GainNode
       // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createGain
-      this.gainNode = this.audioCtx.createGain();
-      this.gainNode.gain.value = 0.1;
-      this.gainNode.connect(this.audioCtx.destination);
+      this.destinationNode = this.audioCtx.createMediaStreamDestination();
+      // this.gainNode = this.audioCtx.createGain()
+      // this.gainNode.gain.value = 0.1
+      // this.gainNode.connect(this.audioCtx.destination)
       this.startTime = this.audioCtx.currentTime;
     }
 
     static isTypedArray(data) {
       // 检测输入的数据是否为 TypedArray 类型或 ArrayBuffer 类型
-      return (data.byteLength && data.buffer && data.buffer.constructor == ArrayBuffer) || data.constructor == ArrayBuffer;
+      return (data.byteLength && data.buffer && data.buffer.constructor == ArrayBuffer) || data.constructor == ArrayBuffer
     }
 
     isSupported(data) {
@@ -141,7 +142,6 @@
       }
       const length = this.samples.length / this.option.channels;
       const audioBuffer = this.audioCtx.createBuffer(this.option.channels, length, this.option.sampleRate);
-
       for (let channel = 0; channel < this.option.channels; channel++) {
         const audioData = audioBuffer.getChannelData(channel);
         let offset = channel;
@@ -165,7 +165,8 @@
       }
       // console.log('start vs current ' + this.startTime + ' vs ' + this.audioCtx.currentTime + ' duration: ' + audioBuffer.duration);
       bufferSource.buffer = audioBuffer;
-      bufferSource.connect(this.gainNode);
+      // bufferSource.connect(this.gainNode)
+      bufferSource.connect(this.destinationNode);
       bufferSource.start(this.startTime);
       this.startTime += audioBuffer.duration;
       this.samples = new Float32Array();
@@ -190,6 +191,6 @@
 
   }
 
-  return PCMPlayer;
+  return PCMTransform;
 
-})));
+}));

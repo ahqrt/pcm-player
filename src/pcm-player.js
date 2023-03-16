@@ -1,4 +1,4 @@
-class PCMPlayer {
+class PCMTransform {
   constructor(option) {
     this.init(option)
   }
@@ -53,15 +53,16 @@ class PCMPlayer {
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()
     // 控制音量的 GainNode
     // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createGain
-    this.gainNode = this.audioCtx.createGain()
-    this.gainNode.gain.value = 0.1
-    this.gainNode.connect(this.audioCtx.destination)
+    this.destinationNode = this.audioCtx.createMediaStreamDestination()
+    // this.gainNode = this.audioCtx.createGain()
+    // this.gainNode.gain.value = 0.1
+    // this.gainNode.connect(this.audioCtx.destination)
     this.startTime = this.audioCtx.currentTime
   }
 
   static isTypedArray(data) {
     // 检测输入的数据是否为 TypedArray 类型或 ArrayBuffer 类型
-    return (data.byteLength && data.buffer && data.buffer.constructor == ArrayBuffer) || data.constructor == ArrayBuffer;
+    return (data.byteLength && data.buffer && data.buffer.constructor == ArrayBuffer) || data.constructor == ArrayBuffer
   }
 
   isSupported(data) {
@@ -75,20 +76,20 @@ class PCMPlayer {
     this.isSupported(data)
 
     // 获取格式化后的buffer
-    data = this.getFormatedValue(data);
+    data = this.getFormatedValue(data)
     // 开始拷贝buffer数据
     // 新建一个Float32Array的空间
-    const tmp = new Float32Array(this.samples.length + data.length);
+    const tmp = new Float32Array(this.samples.length + data.length)
     // console.log(data, this.samples, this.samples.length)
     // 复制当前的实例的buffer值（历史buff)
     // 从头（0）开始复制
-    tmp.set(this.samples, 0);
+    tmp.set(this.samples, 0)
     // 复制传入的新数据
     // 从历史buff位置开始
-    tmp.set(data, this.samples.length);
+    tmp.set(data, this.samples.length)
     // 将新的完整buff数据赋值给samples
     // interval定时器也会从samples里面播放数据
-    this.samples = tmp;
+    this.samples = tmp
     // console.log('this.samples', this.samples)
   }
 
@@ -135,7 +136,6 @@ class PCMPlayer {
     }
     const length = this.samples.length / this.option.channels
     const audioBuffer = this.audioCtx.createBuffer(this.option.channels, length, this.option.sampleRate)
-
     for (let channel = 0; channel < this.option.channels; channel++) {
       const audioData = audioBuffer.getChannelData(channel)
       let offset = channel
@@ -159,7 +159,8 @@ class PCMPlayer {
     }
     // console.log('start vs current ' + this.startTime + ' vs ' + this.audioCtx.currentTime + ' duration: ' + audioBuffer.duration);
     bufferSource.buffer = audioBuffer
-    bufferSource.connect(this.gainNode)
+    // bufferSource.connect(this.gainNode)
+    bufferSource.connect(this.destinationNode)
     bufferSource.start(this.startTime)
     this.startTime += audioBuffer.duration
     this.samples = new Float32Array()
@@ -184,4 +185,4 @@ class PCMPlayer {
 
 }
 
-export default PCMPlayer
+export default PCMTransform
